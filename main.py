@@ -71,7 +71,7 @@ def answer_to_feedback(feedback_id, company, feedback_text, feedback):
     response = requests.patch(url=url, json=body, headers=headers)
     response_text = response.json()
     logging.info(f"Response for feedback {feedback_id}: {response_text}")
-    log_feedback_response(feedback_id, response_text, feedback)
+    log_feedback_response(response_text, feedback)
     print(feedback_text, response_text)
 
 
