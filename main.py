@@ -6,12 +6,13 @@ import random
 import logging
 
 
-def log_feedback_response(response_text, feedback):
+def log_feedback_response(response_text, feedback, feedback_text):
     timestamp = datetime.datetime.now().isoformat()
     log_entry = {
         "feedback": feedback,
         "response_text": response_text,
-        "timestamp": timestamp
+        "timestamp": timestamp,
+        "feedback_text": feedback_text
     }
 
     with open("feedback_log.json", "a", encoding="utf-8") as log_file:
@@ -71,15 +72,16 @@ def answer_to_feedback(feedback_id, company, feedback_text, feedback):
     response = requests.patch(url=url, json=body, headers=headers)
     response_text = response.json()
     logging.info(f"Response for feedback {feedback_id}: {response_text}")
-    log_feedback_response(response_text, feedback)
+    log_feedback_response(response_text, feedback, feedback_text)
     print(feedback_text, response_text)
 
 
 def main():
-    # for company in ['Bonasita', 'MissYourKiss']:
-    for company in ['Bonasita']:
+    for company in ['Bonasita', 'MissYourKiss']:
+    # for company in ['Bonasita']:
         feedback_pool = get_unanswered_feedbacks(company)
         for feedback in feedback_pool:
+            print(feedback)
             if feedback['productValuation'] == 5:
                 text = ''
                 feedback_id = feedback.get('id')
@@ -96,6 +98,7 @@ def main():
                     text = get_feedback_text(company, user_name, "anon_no_photo")
 
                 if text:
+                    pass
                     answer_to_feedback(feedback_id, company, text, feedback)
 
 
