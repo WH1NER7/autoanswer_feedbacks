@@ -77,8 +77,8 @@ def answer_to_feedback(feedback_id, company, feedback_text, feedback):
 
 
 def main():
-    for company in ['Bonasita', 'MissYourKiss']:
-    # for company in ['Bonasita']:
+    # for company in ['Bonasita', 'MissYourKiss']:
+    for company in ['Bonasita']:
         feedback_pool = get_unanswered_feedbacks(company)
         for feedback in feedback_pool:
             print(feedback)
@@ -102,7 +102,33 @@ def main():
                     answer_to_feedback(feedback_id, company, text, feedback)
 
 
+def answer_to_empty_feedbacks_myk():
+    for company in ['MissYourKiss']:
+        feedback_pool = get_unanswered_feedbacks(company)
+        for feedback in feedback_pool:
+            # print(feedback)
+            if feedback['productValuation'] == 5 and feedback['text'] == '':
+                text = ''
+                feedback_id = feedback.get('id')
+                user_name = feedback.get('userName')
+                has_user_name = bool(feedback.get('userName'))
+                has_photo = bool(feedback.get('photoLinks'))
+                if has_photo and has_user_name:
+                    text = get_feedback_text(company, user_name, "name_image")
+                elif has_photo and not has_user_name:
+                    text = get_feedback_text(company, user_name, "anon_images")
+                elif not has_photo and has_user_name:
+                    text = get_feedback_text(company, user_name, "no_photos_name")
+                elif not has_photo and not has_user_name:
+                    text = get_feedback_text(company, user_name, "anon_no_photo")
+
+                if text:
+                    pass
+                    answer_to_feedback(feedback_id, company, text, feedback)
+
+
 if __name__ == '__main__':
+    answer_to_empty_feedbacks_myk()
     # print(get_feedback_text('Bonasita', '', "anon_images"))
     # print(get_feedback_text('Bonasita', '', "anon_no_photo"))
     # print(get_feedback_text('Bonasita', 'ывы', "name_image"))
