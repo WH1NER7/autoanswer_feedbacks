@@ -12,14 +12,25 @@ def detect_name_and_gender(name):
     morph = pymorphy3.MorphAnalyzer(lang='ru')
     parsed_name = morph.parse(first_name)
 
+    score_male = 0
+    score_female = 0
+
     for result in parsed_name:
         if 'Name' in result.tag and "femn" in result.tag:
-            return 'female'
+            score_female += result.score
         elif 'Name' in result.tag and "masc" in result.tag:
-            return 'male'
-        else:
-            return 'female'
-    return 'female'
+            score_male += result.score
+
+    # Дополнительные условия для определения, что слово не является именем
+    print(score_female, score_male)
+    if score_male > 0.7 and score_male > score_female:
+        return 'male'
+    elif score_female > score_male:
+        return 'female'
+    elif score_male + score_female > 0.20:  # Задайте пороговое значение по своему усмотрению
+        return 'unknown'
+    else:
+        return 'unknown'
 
 
 def get_feedback_text_category(has_photo, has_user_name, sex, valuation):
@@ -34,6 +45,10 @@ def get_feedback_text_category(has_photo, has_user_name, sex, valuation):
         (False, True, 'female'): "no_photos_name_female",
         (False, False, 'male'): "anon_no_photo_male",
         (False, False, 'female'): "anon_no_photo_female",
+        (False, True, 'unknown'): "anon_no_photo_female",
+        (True, True, 'unknown'): "anon_no_photo_female",
+        (True, False, 'unknown'): "anon_no_photo_female",
+        (False, False, 'unknown'): "anon_no_photo_female",
     }
 
     return categories.get((has_photo, has_user_name, sex), "no_photos_name_female")
