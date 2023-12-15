@@ -107,13 +107,14 @@ def answer_to_feedback(feedback_id, company, feedback_text, feedback):
     response = requests.patch(url=url, json=body, headers=headers)
     response_text = response.json()
     logging.info(f"Response for feedback {feedback_id}: {response_text}")
-    log_feedback_response(response_text, feedback)
+    log_feedback_response(feedback_text, feedback)
     print(feedback_text, response_text)
 
 
 def answer_to_feedbacks_all():
     for company in ["MissYourKiss", "Bonasita"]:
         feedback_pool = get_unanswered_feedbacks(company)
+        print(feedback_pool)
         for feedback in feedback_pool:
             if feedback.get('productDetails').get("nmId") not in [131619917, 166281374, 150623763, 135933841, 171221030, 143418102, 182849819, 166779160, 151137559, 175757013, 150623767, 150623771]:
                 feedback_id = feedback.get('id')
@@ -125,7 +126,7 @@ def answer_to_feedbacks_all():
                 text_category = get_feedback_text_category(has_photo, has_user_name, sex, feedback.get("productValuation"))
                 text = get_feedback_text(company, user_name, text_category)
 
-                answer_to_feedback(feedback_id, company, text, feedback)
+                # answer_to_feedback(feedback_id, company, text, feedback)
 
 
 if __name__ == '__main__':
