@@ -131,7 +131,8 @@ def answer_to_feedbacks_all():
         feedback_pool = get_unanswered_feedbacks(company)
         print(feedback_pool)
         for feedback in feedback_pool:
-            if feedback.get('productDetails').get("nmId") not in [131619917, 166281374, 150623763, 135933841, 171221030, 143418102, 182849819, 166779160, 151137559, 175757013, 150623767, 150623771]:
+            if feedback.get('productDetails').get("nmId") not in [131619917, 166281374, 150623763, 135933841, 171221030, 143418102, 182849819, 166779160, 151137559, 175757013, 150623767, 150623771]\
+                    and feedback.get("productValuation") == 5:
                 feedback_id = feedback.get('id')
                 user_name = feedback.get('userName')
                 has_user_name = bool(feedback.get('userName'))
