@@ -11,7 +11,7 @@ def detect_name_and_gender(name):
     first_name = name.split(" ")[0]
     morph = pymorphy3.MorphAnalyzer(lang='ru')
     parsed_name = morph.parse(first_name)
-
+    print(parsed_name)
     score_male = 0
     score_female = 0
 
@@ -46,8 +46,8 @@ def get_feedback_text_category(has_photo, has_user_name, sex, valuation):
         (False, False, 'male'): "anon_no_photo_male",
         (False, False, 'female'): "anon_no_photo_female",
         (False, True, 'unknown'): "anon_no_photo_female",
-        (True, True, 'unknown'): "anon_no_photo_female",
-        (True, False, 'unknown'): "anon_no_photo_female",
+        (True, True, 'unknown'): "name_image_female",
+        (True, False, 'unknown'): "anon_images_female",
         (False, False, 'unknown'): "anon_no_photo_female",
     }
 
@@ -142,7 +142,7 @@ def answer_to_feedbacks_all():
                 text_category = get_feedback_text_category(has_photo, has_user_name, sex, feedback.get("productValuation"))
                 text = get_feedback_text(company, user_name, text_category)
 
-                answer_to_feedback(feedback_id, company, text, feedback)
+                # answer_to_feedback(feedback_id, company, text, feedback)
 
 
 if __name__ == '__main__':
