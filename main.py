@@ -16,9 +16,9 @@ def detect_name_and_gender(name):
     score_female = 0
 
     for result in parsed_name:
-        if 'Name' in result.tag and "femn" in result.tag:
+        if 'Name' in result.tag and "femn" in result.tag and result.normal_form == first_name.lower():
             score_female += result.score
-        elif 'Name' in result.tag and "masc" in result.tag:
+        elif 'Name' in result.tag and "masc" in result.tag and result.normal_form == first_name.lower():
             score_male += result.score
 
     # Дополнительные условия для определения, что слово не является именем
