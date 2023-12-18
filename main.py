@@ -142,7 +142,7 @@ def answer_to_feedbacks_all():
                 text_category = get_feedback_text_category(has_photo, has_user_name, sex, feedback.get("productValuation"))
                 text = get_feedback_text(company, user_name, text_category)
 
-                # answer_to_feedback(feedback_id, company, text, feedback)
+                answer_to_feedback(feedback_id, company, text, feedback)
 
 
 if __name__ == '__main__':
