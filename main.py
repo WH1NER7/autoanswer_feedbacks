@@ -12,23 +12,26 @@ def detect_name_and_gender(name):
     morph = pymorphy3.MorphAnalyzer(lang='ru')
     parsed_name = morph.parse(first_name)
     print(parsed_name)
+
     score_male = 0
     score_female = 0
+    score_surn = 0
 
     for result in parsed_name:
         if 'Name' in result.tag and "femn" in result.tag and result.normal_form == first_name.lower():
             score_female += result.score
         elif 'Name' in result.tag and "masc" in result.tag and result.normal_form == first_name.lower():
             score_male += result.score
+        elif 'Surn' in result.tag:
+            score_surn += result.score
 
-    # Дополнительные условия для определения, что слово не является именем
-    print(score_female, score_male)
+    print(name, score_female, score_male, score_surn)
     if score_male > 0.7 and score_male > score_female:
         return 'male'
-    elif score_female > score_male:
-        return 'female'
-    elif score_male + score_female > 0.20:  # Задайте пороговое значение по своему усмотрению
+    elif score_surn > score_male + score_female:
         return 'unknown'
+    elif score_female > score_male:  # Если фамилия встречается чаще, чем имя
+        return 'female'
     else:
         return 'unknown'
 
@@ -129,7 +132,6 @@ def answer_to_feedback(feedback_id, company, feedback_text, feedback):
 def answer_to_feedbacks_all():
     for company in ["MissYourKiss", "Bonasita"]:
         feedback_pool = get_unanswered_feedbacks(company)
-        print(feedback_pool)
         for feedback in feedback_pool:
             if feedback.get('productDetails').get("nmId") not in [131619917, 166281374, 150623763, 135933841, 171221030, 143418102, 182849819, 166779160, 151137559, 175757013, 150623767, 150623771]\
                     and feedback.get("productValuation") == 5:
