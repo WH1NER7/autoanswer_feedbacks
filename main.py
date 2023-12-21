@@ -130,7 +130,7 @@ def answer_to_feedback(feedback_id, company, feedback_text, feedback):
 
 
 def answer_to_feedbacks_all():
-    for company in ["MissYourKiss", "Bonasita"]:
+    for company in ["Bonasita"]:
         feedback_pool = get_unanswered_feedbacks(company)
         for feedback in feedback_pool:
             if feedback.get('productDetails').get("nmId") not in [131619917, 166281374, 150623763, 135933841, 171221030, 143418102, 182849819, 166779160, 151137559, 175757013, 150623767, 150623771]\
@@ -147,7 +147,27 @@ def answer_to_feedbacks_all():
                 answer_to_feedback(feedback_id, company, text, feedback)
 
 
+def answer_to_feedbacks_myk():
+    for company in ["MissYourKiss"]:
+        feedback_pool = get_unanswered_feedbacks(company)
+        for feedback in feedback_pool:
+            print(feedback)
+            if feedback.get('productDetails').get("nmId") not in [131619917, 166281374, 150623763, 135933841, 171221030, 143418102, 182849819, 166779160, 151137559, 175757013, 150623767, 150623771]\
+                    and feedback.get("productValuation") == 5 and feedback.get('text') == '':
+                feedback_id = feedback.get('id')
+                user_name = feedback.get('userName')
+                has_user_name = bool(feedback.get('userName'))
+                has_photo = bool(feedback.get('photoLinks'))
+                sex = detect_name_and_gender(user_name)
+
+                text_category = get_feedback_text_category(has_photo, has_user_name, sex, feedback.get("productValuation"))
+                text = get_feedback_text(company, user_name, text_category)
+
+                answer_to_feedback(feedback_id, company, text, feedback)
+
+
 if __name__ == '__main__':
     answer_to_feedbacks_all()
+    answer_to_feedbacks_myk()
 
 
