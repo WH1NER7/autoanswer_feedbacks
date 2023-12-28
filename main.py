@@ -130,7 +130,7 @@ def answer_to_feedback(feedback_id, company, feedback_text, feedback):
 
 
 def answer_to_feedbacks_all():
-    for company in ["Bonasita"]:
+    for company in ["Bonasita", "MissYourKiss"]:
         feedback_pool = get_unanswered_feedbacks(company)
         for feedback in feedback_pool:
             if feedback.get('productDetails').get("nmId") not in [131619917, 166281374, 150623763, 135933841, 171221030, 143418102, 182849819, 166779160, 151137559, 175757013, 150623767, 150623771]\
@@ -168,6 +168,6 @@ def answer_to_feedbacks_myk():
 
 if __name__ == '__main__':
     answer_to_feedbacks_all()
-    answer_to_feedbacks_myk()
+    # answer_to_feedbacks_myk()
 
 
