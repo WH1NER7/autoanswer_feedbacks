@@ -149,10 +149,31 @@ def answer_to_feedbacks_all():
 
 
 def answer_to_feedbacks_myk():
+    banned_words = [
+        "перепутали", "отказалась", "изнашиваются", "на маленькую грудь", "порвались",
+        "в комплекте нет", "материал не дышит", "не подошел в объеме", "большой в объеме",
+        "отдала предпочтение другому", "нитки торчат", "маломерит", "маломер", "мал",
+        "отказ", "в пользу другой модели", "бюст маловат", "лифчик маленький", "лифон маленький",
+        "лифчик малюсенький", "чашки маленькие", "возврат", "не подошли", "выглядят истрепавшимися",
+        "повылазили нитки", "дорого", "дороговато"
+    ]
+
+    def contains_banned_word(feedback_text):
+        feedback_text_lower = feedback_text.lower()
+        for word in banned_words:
+            if word in feedback_text_lower:
+                return True
+        return False
+
     for company in ["MissYourKiss"]:
         feedback_pool = get_unanswered_feedbacks(company)
 
         for feedback in feedback_pool:
+            feedback_text = feedback.get("text", "")
+            # Проверяем, что текст отзыва не содержит запрещенных слов
+            if contains_banned_word(feedback_text):
+                continue
+
             # Проверяем, что оценка равна максимальной и нет ссылок на фотографии
             if feedback.get("productValuation") == 5 and not bool(feedback.get('photoLinks')):
                 feedback_id = feedback.get('id')
