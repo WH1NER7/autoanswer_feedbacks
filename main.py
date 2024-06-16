@@ -103,6 +103,7 @@ def get_unanswered_feedbacks(company):
 
     try:
         response = requests.get(url=url, headers=headers)
+
         return response.json().get('data').get('feedbacks')
     except Exception as e:
         print(e)
@@ -148,6 +149,8 @@ def answer_to_feedbacks_all():
                 answer_to_feedback(feedback_id, company, text, feedback)
 
 
+import re
+
 def answer_to_feedbacks_myk():
     banned_words = [
         "перепутали", "отказалась", "изнашиваются", "на маленькую грудь", "порвались",
@@ -161,7 +164,8 @@ def answer_to_feedbacks_myk():
     def contains_banned_word(feedback_text):
         feedback_text_lower = feedback_text.lower()
         for word in banned_words:
-            if word in feedback_text_lower:
+            pattern = rf'\b{re.escape(word)}\b'
+            if re.search(pattern, feedback_text_lower):
                 return True
         return False
 
@@ -190,5 +194,5 @@ def answer_to_feedbacks_myk():
 
 
 if __name__ == '__main__':
-    answer_to_feedbacks_all()
+    # answer_to_feedbacks_all()
     answer_to_feedbacks_myk()
