@@ -151,6 +151,7 @@ def answer_to_feedbacks_all():
 
 import re
 
+
 def answer_to_feedbacks_myk():
     banned_words = [
         "перепутали", "отказалась", "изнашиваются", "на маленькую грудь", "порвались",
@@ -161,9 +162,20 @@ def answer_to_feedbacks_myk():
         "повылазили нитки", "дорого", "дороговато"
     ]
 
+    morph = pymorphy3.MorphAnalyzer()
+
+    def get_all_forms(word):
+        parsed_word = morph.parse(word)[0]
+        return {form.word for form in parsed_word.lexeme}
+
+    banned_forms = set()
+    for word in banned_words:
+        forms = get_all_forms(word)
+        banned_forms.update(forms)
+
     def contains_banned_word(feedback_text):
         feedback_text_lower = feedback_text.lower()
-        for word in banned_words:
+        for word in banned_forms:
             pattern = rf'\b{re.escape(word)}\b'
             if re.search(pattern, feedback_text_lower):
                 return True
