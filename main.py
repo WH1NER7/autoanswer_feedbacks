@@ -191,7 +191,7 @@ def answer_to_feedbacks_myk():
                 continue
 
             # Проверяем, что оценка равна максимальной и нет ссылок на фотографии
-            if feedback.get("productValuation") == 5 and not bool(feedback.get('photoLinks')):
+            if feedback.get("productValuation") == 5 and not bool(feedback.get('photoLinks')) and not feedback.get('productDetails').get("nmId") in [218272630, 226609837, 226609836, 241885224, 226608461, 228738081]:
                 feedback_id = feedback.get('id')
                 user_name = feedback.get('userName')
                 has_user_name = bool(feedback.get('userName'))
