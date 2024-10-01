@@ -31,7 +31,7 @@ def get_token_evn(company):
         print(e)
         return ''
 
-
+#
 def generate_feedback_text(user_name, prod_val, feedback_text, has_photo):
     client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
