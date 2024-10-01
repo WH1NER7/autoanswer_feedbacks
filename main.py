@@ -5,56 +5,7 @@ import json
 import random
 import logging
 import pymorphy3
-
-
-def detect_name_and_gender(name):
-    first_name = name.split(" ")[0]
-    morph = pymorphy3.MorphAnalyzer(lang='ru')
-    parsed_name = morph.parse(first_name)
-    print(parsed_name)
-
-    score_male = 0
-    score_female = 0
-    score_surn = 0
-
-    for result in parsed_name:
-        if 'Name' in result.tag and "femn" in result.tag and result.normal_form == first_name.lower():
-            score_female += result.score
-        elif 'Name' in result.tag and "masc" in result.tag and result.normal_form == first_name.lower():
-            score_male += result.score
-        elif 'Surn' in result.tag:
-            score_surn += result.score
-
-    print(name, score_female, score_male, score_surn)
-    if score_male > 0.7 and score_male > score_female:
-        return 'male'
-    elif score_surn > score_male + score_female:
-        return 'unknown'
-    elif score_female > score_male:  # Если фамилия встречается чаще, чем имя
-        return 'female'
-    else:
-        return 'unknown'
-
-
-def get_feedback_text_category(has_photo, has_user_name, sex, valuation):
-    if valuation < 5:
-        return "negative"
-
-    categories = {
-        (True, True, 'male'): "name_image_male",
-        (True, True, 'female'): "name_image_female",
-        (True, False, 'female'): "anon_images_female",
-        (False, True, 'male'): "no_photos_name_male",
-        (False, True, 'female'): "no_photos_name_female",
-        (False, False, 'male'): "anon_no_photo_male",
-        (False, False, 'female'): "anon_no_photo_female",
-        (False, True, 'unknown'): "anon_no_photo_female",
-        (True, True, 'unknown'): "name_image_female",
-        (True, False, 'unknown'): "anon_images_female",
-        (False, False, 'unknown'): "anon_no_photo_female",
-    }
-
-    return categories.get((has_photo, has_user_name, sex), "no_photos_name_female")
+from openai import OpenAI
 
 
 def log_feedback_response(response_text, feedback):
@@ -81,17 +32,63 @@ def get_token_evn(company):
         return ''
 
 
-def get_feedback_text(company, user_name, category):
-    json_file_path = f'texts_{company}.json'
+def generate_feedback_text(user_name, prod_val, feedback_text, has_photo):
+    client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
-    with open(json_file_path, 'r', encoding='utf-8') as json_file:
-        data = json.load(json_file)
-
-    random_text = random.choice(data[category])
-    updated_text = random_text.replace("(ИМЯ)", user_name)
-    updated_text = updated_text.replace("MissYourKiss", company)
-
-    return updated_text
+    # Пример запроса
+    response = client.chat.completions.create(
+        model="chatgpt-4o-latest",  # Имя вашей обученной модели
+        temperature=0.7,
+        # max_tokens=100,
+        # top_p=0.9,
+        # frequency_penalty=0.5,
+        # presence_penalty=0.3
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    "Вы — профессиональный менеджер по работе с клиентами компании MissYourKiss (мы продаем женское нижнее белье). "
+                    "Ваша задача — вежливо и конструктивно отвечать на отзывы пользователей от лица компании. "
+                    
+                    # Основные принципы
+                    "Отвечайте покупателям на 'вы'. "
+                    "Не превышайте 4 предложений в ответе. "
+                    "Поддерживайте дружелюбный, но профессиональный тон общения. "
+                    "Используйте 'теплый' стиль общения, как с давно знакомым клиентом, но без панибратства. "
+                    "Используйте смайлы, если оценка товара — 5. "
+                    
+                    # Обработка отзывов с низкими оценками (4 и ниже)
+                    "Если отзыв содержит замечания по нашей вине (например, брак или недокомплект товара, обычно его воруют другие покупатели), предложите покупателю связаться для решения проблемы. "
+                    "Укажите следующие контакты (передавай полностью, как указано): "
+                    "- Wildberries (Профиль -> Покупки -> Связаться с продавцом) "
+                    "- Telegram: @missyourkiss_bot -> Служба заботы. "
+                    
+                    # Недовольство товаром не по нашей вине
+                    "Если клиент недоволен товаром не по нашей вине (например, товар провели как полученный на пункте выдачи, хотя клиент отказался, или отсутствовали чокеры или подвязки, которые не должны входить в комплект), выразите сожаление и объясните, что не всегда всё подходит всем. "
+                    
+                    # Отзывы с высокой оценкой (5)
+                    "Если отзыв имеет оценку 5 и текст положительный, и если отзыв содержит фотографию, похвалите фотографию и скажите что-то приятное о ней. "
+                    
+                    # Пустые отзывы
+                    "Если отзыв пустой, поблагодарите за покупку и пригласите вернуться снова. "
+                    
+                    # Имя клиента и завершение ответа
+                    "Если имя клиента кажется ненастоящим, не используйте его в ответе. "
+                    "В конце каждого ответа используйте одну из завершающих фраз, например: 'С любовью, MissYourKiss' или 'С наилучшими пожеланиями, MissYourKiss'. "
+                    
+                    # Важно
+                    "Никогда не обещайте создание или изменение товара. "
+                    "Используйте красивое оформление текста с отступами. "
+                    "Если текст отзыва пустой, отвечайте в зависимости от оценки."
+                )
+            },
+            {
+                "role": "user",
+                "content": f"Клиента зовут {user_name}. Оценка {prod_val}. Есть ли фото?: {has_photo}. {feedback_text}"
+            }
+        ]
+    )
+    return response.choices[0].message.content
 
 
 def get_unanswered_feedbacks(company):
@@ -130,79 +127,16 @@ def answer_to_feedback(feedback_id, company, feedback_text, feedback):
     print(feedback_text, response_text)
 
 
-def answer_to_feedbacks_all():
-    for company in ["Bonasita"]:
-        feedback_pool = get_unanswered_feedbacks(company)
-
-        for feedback in feedback_pool:
-            if feedback.get("productValuation") == 5:
-                feedback_id = feedback.get('id')
-                user_name = feedback.get('userName')
-                has_user_name = bool(feedback.get('userName'))
-                has_photo = bool(feedback.get('photoLinks'))
-                sex = detect_name_and_gender(user_name)
-
-                text_category = get_feedback_text_category(has_photo, has_user_name, sex,
-                                                           feedback.get("productValuation"))
-                text = get_feedback_text(company, user_name, text_category)
-
-                answer_to_feedback(feedback_id, company, text, feedback)
-
-
-import re
-
-
 def answer_to_feedbacks_myk():
-    banned_words = [
-        "перепутали", "отказалась", "изнашиваются", "на маленькую грудь", "порвались",
-        "в комплекте нет", "материал не дышит", "не подошел в объеме", "большой в объеме",
-        "отдала предпочтение другому", "нитки торчат", "маломерит", "маломер", "мал",
-        "отказ", "в пользу другой модели", "бюст маловат", "лифчик маленький", "лифон маленький",
-        "лифчик малюсенький", "чашки маленькие", "возврат", "не подошли", "выглядят истрепавшимися",
-        "повылазили нитки", "дорого", "дороговато"
-    ]
-
-    morph = pymorphy3.MorphAnalyzer()
-
-    def get_all_forms(word):
-        parsed_word = morph.parse(word)[0]
-        return {form.word for form in parsed_word.lexeme}
-
-    banned_forms = set()
-    for word in banned_words:
-        forms = get_all_forms(word)
-        banned_forms.update(forms)
-
-    def contains_banned_word(feedback_text):
-        feedback_text_lower = feedback_text.lower()
-        for word in banned_forms:
-            pattern = rf'\b{re.escape(word)}\b'
-            if re.search(pattern, feedback_text_lower):
-                return True
-        return False
-
     for company in ["MissYourKiss"]:
         feedback_pool = get_unanswered_feedbacks(company)
 
         for feedback in feedback_pool:
-            feedback_text = feedback.get("text", "")
-            # Проверяем, что текст отзыва не содержит запрещенных слов
-            if contains_banned_word(feedback_text):
-                continue
-
-            # Проверяем, что оценка равна максимальной и нет ссылок на фотографии
-            if feedback.get("productValuation") == 5 and not bool(feedback.get('photoLinks')) and not feedback.get('productDetails').get("nmId") in [218272630, 226609837, 226609836, 241885224, 226608461, 228738081]:
-                feedback_id = feedback.get('id')
-                user_name = feedback.get('userName')
-                has_user_name = bool(feedback.get('userName'))
-                has_photo = bool(feedback.get('photoLinks'))
-                sex = detect_name_and_gender(user_name)
-
-                text_category = get_feedback_text_category(has_photo, has_user_name, sex,
-                                                           feedback.get("productValuation"))
-                text = get_feedback_text(company, user_name, text_category)
-
-                answer_to_feedback(feedback_id, company, text, feedback)
+            feedback_id = feedback.get('id')
+            print("Текст: " + feedback.get("text", "") + ' | Плюсы, которые выделил пользователь: ' + feedback.get("pros", "") + ' | Минусы, которые выделил пользователь: ' + feedback.get("cons", ""))
+            answer = generate_feedback_text(feedback.get('userName'), feedback.get("productValuation"), ("Текст: " + feedback.get("text", "") + '. Достоинства по мнению клиента: ' + feedback.get("pros", "") + '. Недостатки по мнению клиента: ' + feedback.get("cons", "")), bool(feedback.get('photoLinks')))
+            print(answer)
+            answer_to_feedback(feedback_id, company, answer, feedback)
 
 
 if __name__ == '__main__':
