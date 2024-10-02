@@ -13,7 +13,7 @@ def log_feedback_response(response_text, feedback):
     log_entry = {
         "valuation": feedback.get("productValuation"),
         "feedback_id": feedback.get("id"),
-        "nmId": feedback.get('productDetails').get("nmId"),
+        # "nmId": feedback.get('productDetails').get("nmId"),
         "response_text": response_text,
         "timestamp": timestamp,
         "feedback_text": feedback.get("text"),
@@ -26,6 +26,7 @@ def log_feedback_response(response_text, feedback):
 
 def get_token_evn(company):
     try:
+        print(f'{company}_TOKEN')
         return os.environ[f'{company}_TOKEN']
     except Exception as e:
         print(e)
@@ -38,8 +39,8 @@ def generate_feedback_text(user_name, prod_val, feedback_text, has_photo):
     # Пример запроса
     response = client.chat.completions.create(
         model="chatgpt-4o-latest",  # Имя вашей обученной модели
-        temperature=0.7,
-        # max_tokens=100,
+        temperature=0.9,
+        max_tokens=1500,
         # top_p=0.9,
         # frequency_penalty=0.5,
         # presence_penalty=0.3
@@ -49,33 +50,41 @@ def generate_feedback_text(user_name, prod_val, feedback_text, has_photo):
                 "content": (
                     "Вы — профессиональный менеджер по работе с клиентами компании MissYourKiss (мы продаем женское нижнее белье). "
                     "Ваша задача — вежливо и конструктивно отвечать на отзывы пользователей от лица компании. "
-                    
+                    "Вам будет передаваться оценка товара пользователем, комментарий, плюс и минусы, которые выделил пользователь. А также оставил ли пользователь фото"
+
                     # Основные принципы
                     "Отвечайте покупателям на 'вы'. "
                     "Не превышайте 4 предложений в ответе. "
                     "Поддерживайте дружелюбный, но профессиональный тон общения. "
                     "Используйте 'теплый' стиль общения, как с давно знакомым клиентом, но без панибратства. "
                     "Используйте смайлы, если оценка товара — 5. "
-                    
+
                     # Обработка отзывов с низкими оценками (4 и ниже)
-                    "Если отзыв содержит замечания по нашей вине (например, брак или недокомплект товара, обычно его воруют другие покупатели), предложите покупателю связаться для решения проблемы. "
+                    "Если отзыв содержит замечания по нашей вине "
+                    "    - брак"
+                    "    - недокомплект товара, обычно его воруют другие покупатели"
+                    "    - выцветание ткани"
+                    "то предложите покупателю связаться для решения проблемы. "
                     "Укажите следующие контакты (передавай полностью, как указано): "
                     "- Wildberries (Профиль -> Покупки -> Связаться с продавцом) "
-                    "- Telegram: @missyourkiss_bot -> Служба заботы. "
-                    
+                    "- t е l е g r а m: @missyourkiss_bot -> Служба заботы. "
+
                     # Недовольство товаром не по нашей вине
-                    "Если клиент недоволен товаром не по нашей вине (например, товар провели как полученный на пункте выдачи, хотя клиент отказался, или отсутствовали чокеры или подвязки, которые не должны входить в комплект), выразите сожаление и объясните, что не всегда всё подходит всем. "
-                    
+                    "Если клиент недоволен товаром не по нашей вине "
+                    "    - товар провели как полученный на пункте выдачи, хотя клиент отказался"
+                    "    - отсутствовали чокеры или подвязки, которые не должны входить в комплект"
+                    "то выразите сожаление и объясните, что, к сожалению, такие ситуации случаются"
+
                     # Отзывы с высокой оценкой (5)
-                    "Если отзыв имеет оценку 5 и текст положительный, и если отзыв содержит фотографию, похвалите фотографию и скажите что-то приятное о ней. "
-                    
+                    "Если отзыв имеет оценку 5 и текст положительный, и отзыв содержит фотографию, похвалите фотографию и скажите что-то приятное о ней. "
+
                     # Пустые отзывы
                     "Если отзыв пустой, поблагодарите за покупку и пригласите вернуться снова. "
-                    
+
                     # Имя клиента и завершение ответа
                     "Если имя клиента кажется ненастоящим, не используйте его в ответе. "
                     "В конце каждого ответа используйте одну из завершающих фраз, например: 'С любовью, MissYourKiss' или 'С наилучшими пожеланиями, MissYourKiss'. "
-                    
+
                     # Важно
                     "Никогда не обещайте создание или изменение товара. "
                     "Используйте красивое оформление текста с отступами. "
@@ -93,6 +102,7 @@ def generate_feedback_text(user_name, prod_val, feedback_text, has_photo):
 
 def get_unanswered_feedbacks(company):
     url = "https://feedbacks-api.wildberries.ru/api/v1/feedbacks?isAnswered=false&take=1000&skip=0"
+
     token = get_token_evn(company)
     headers = {
         "Authorization": token
@@ -100,7 +110,7 @@ def get_unanswered_feedbacks(company):
 
     try:
         response = requests.get(url=url, headers=headers)
-
+        print(response.json())
         return response.json().get('data').get('feedbacks')
     except Exception as e:
         print(e)
@@ -122,19 +132,55 @@ def answer_to_feedback(feedback_id, company, feedback_text, feedback):
 
     response = requests.patch(url=url, json=body, headers=headers)
     response_text = response.json()
+
     logging.info(f"Response for feedback {feedback_id}: {response_text}")
     log_feedback_response(feedback_text, feedback)
     print(feedback_text, response_text)
 
 
+def get_wildberries_feedbacks(cookie):
+    url = "https://seller-services.wildberries.ru/ns/fa-seller-api/reviews-ext-back-end/api/v1/feedbacks?isAnswered=true&limit=100&offset=0&searchText=&sortOrder=dateDesc&valuations=1&valuations=2&valuations=3&valuations=4&valuations=5"
+
+    headers = {
+        'Cookie': cookie  # Укажите передаваемый cookie в заголовке
+    }
+
+    try:
+        # Выполняем GET-запрос
+        response = requests.get(url, headers=headers)
+
+        # Проверка на успешность запроса
+        if response.status_code != 200:
+            print(f"Ошибка: не удалось получить данные. Статус код: {response.status_code}")
+            return None
+
+        # Преобразуем ответ в формат JSON
+        data = response.json()
+
+        # Проверка на наличие данных
+        if data["data"]["feedbacks"]:
+            feedbacks = data["data"]["feedbacks"]
+
+            # Фильтруем отзывы, у которых поле "answer" равно null
+            unanswered_feedbacks = [feedback for feedback in feedbacks if feedback['answer'] is None]
+
+            return unanswered_feedbacks
+        else:
+            print("Ошибка: данные о отзывах отсутствуют в ответе.")
+            return None
+
+    except requests.exceptions.RequestException as e:
+        print(f"Ошибка запроса: {e}")
+        return None
+
+
 def answer_to_feedbacks_myk():
     for company in ["MissYourKiss"]:
-        feedback_pool = get_unanswered_feedbacks(company)
+        feedback_pool = get_wildberries_feedbacks(os.getenv('MYK_COOKIE'))
 
         for feedback in feedback_pool:
             feedback_id = feedback.get('id')
-            print("Текст: " + feedback.get("text", "") + ' | Плюсы, которые выделил пользователь: ' + feedback.get("pros", "") + ' | Минусы, которые выделил пользователь: ' + feedback.get("cons", ""))
-            answer = generate_feedback_text(feedback.get('userName'), feedback.get("productValuation"), ("Текст: " + feedback.get("text", "") + '. Достоинства по мнению клиента: ' + feedback.get("pros", "") + '. Недостатки по мнению клиента: ' + feedback.get("cons", "")), bool(feedback.get('photoLinks')))
+            answer = generate_feedback_text(feedback.get('feedbackInfo').get('userName'), feedback.get("valuation"), ("Текст: " + feedback.get('feedbackInfo').get("feedbackText", "") + '. Достоинства по мнению клиента: ' + feedback.get('feedbackInfo').get("feedbackTextPros", "") + '. Недостатки по мнению клиента: ' + feedback.get('feedbackInfo').get("feedbackTextCons", "")), bool(feedback.get('feedbackInfo').get('photos')))
             print(answer)
             answer_to_feedback(feedback_id, company, answer, feedback)
 
