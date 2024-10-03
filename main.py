@@ -138,7 +138,7 @@ def answer_to_feedback(feedback_id, company, feedback_text, feedback):
     print(feedback_text, response_text)
 
 
-def get_wildberries_feedbacks(cookie):
+def get_wildberries_empty_feedbacks(cookie):
     url = "https://seller-services.wildberries.ru/ns/fa-seller-api/reviews-ext-back-end/api/v1/feedbacks?isAnswered=true&limit=100&offset=0&searchText=&sortOrder=dateDesc&valuations=1&valuations=2&valuations=3&valuations=4&valuations=5"
 
     headers = {
@@ -174,15 +174,60 @@ def get_wildberries_feedbacks(cookie):
         return None
 
 
+def get_wildberries_unanswered_feedbacks(cookie):
+    url = "https://seller-services.wildberries.ru/ns/fa-seller-api/reviews-ext-back-end/api/v1/feedbacks?isAnswered=false&limit=100&offset=0&searchText=&sortOrder=dateDesc&valuations=1&valuations=2&valuations=3&valuations=4&valuations=5"
+
+    headers = {
+        'Cookie': cookie  # Укажите передаваемый cookie в заголовке
+    }
+
+    try:
+        # Выполняем GET-запрос
+        response = requests.get(url, headers=headers)
+
+        # Проверка на успешность запроса
+        if response.status_code != 200:
+            print(f"Ошибка: не удалось получить данные. Статус код: {response.status_code}")
+            return None
+
+        # Преобразуем ответ в формат JSON
+        data = response.json()
+
+        # Проверка на наличие данных
+        if data["data"]["feedbacks"]:
+            feedbacks = data["data"]["feedbacks"]
+
+            # Фильтруем отзывы, у которых поле "answer" равно null
+            # unanswered_feedbacks = [feedback for feedback in feedbacks if feedback['answer'] is None]
+
+            return feedbacks
+        else:
+            print("Ошибка: данные о отзывах отсутствуют в ответе.")
+            return None
+
+    except requests.exceptions.RequestException as e:
+        print(f"Ошибка запроса: {e}")
+        return None
+
+
 def answer_to_feedbacks_myk():
     for company in ["MissYourKiss"]:
-        feedback_pool = get_wildberries_feedbacks(os.getenv('MYK_COOKIE'))
+        feedback_pool = get_wildberries_empty_feedbacks(os.getenv('MYK_COOKIE'))
 
         for feedback in feedback_pool:
             feedback_id = feedback.get('id')
             answer = generate_feedback_text(feedback.get('feedbackInfo').get('userName'), feedback.get("valuation"), ("Текст: " + feedback.get('feedbackInfo').get("feedbackText", "") + '. Достоинства по мнению клиента: ' + feedback.get('feedbackInfo').get("feedbackTextPros", "") + '. Недостатки по мнению клиента: ' + feedback.get('feedbackInfo').get("feedbackTextCons", "")), bool(feedback.get('feedbackInfo').get('photos')))
             print(answer)
             answer_to_feedback(feedback_id, company, answer, feedback)
+
+        feedback_pool_unanswered = get_wildberries_unanswered_feedbacks(os.getenv('MYK_COOKIE'))
+
+        for feedback in feedback_pool_unanswered:
+            feedback_id = feedback.get('id')
+            answer = generate_feedback_text(feedback.get('feedbackInfo').get('userName'), feedback.get("valuation"), ("Текст: " + feedback.get('feedbackInfo').get("feedbackText", "") + '. Достоинства по мнению клиента: ' + feedback.get('feedbackInfo').get("feedbackTextPros", "") + '. Недостатки по мнению клиента: ' + feedback.get('feedbackInfo').get("feedbackTextCons", "")), bool(feedback.get('feedbackInfo').get('photos')))
+            print(answer)
+            answer_to_feedback(feedback_id, company, answer, feedback)
+
 
 
 if __name__ == '__main__':
