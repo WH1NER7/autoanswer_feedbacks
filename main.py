@@ -7,6 +7,10 @@ import logging
 import pymorphy3
 from openai import OpenAI
 
+from chat_gpt_generation_ozon import generate_feedback_text_ozon
+from ozon_feedbacks import process_url
+from response_to_feedback import respond_to_review
+
 
 def log_feedback_response(response_text, feedback):
     timestamp = datetime.datetime.now().isoformat()
@@ -33,7 +37,7 @@ def get_token_evn(company):
         return ''
 
 #
-def generate_feedback_text(user_name, prod_val, feedback_text, has_photo):
+def generate_feedback_text_wb(user_name, prod_val, feedback_text, has_photo):
     client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
     # Пример запроса
@@ -216,7 +220,7 @@ def answer_to_feedbacks_myk():
 
         for feedback in feedback_pool:
             feedback_id = feedback.get('id')
-            answer = generate_feedback_text(feedback.get('feedbackInfo').get('userName'), feedback.get("valuation"), ("Текст: " + feedback.get('feedbackInfo').get("feedbackText", "") + '. Достоинства по мнению клиента: ' + feedback.get('feedbackInfo').get("feedbackTextPros", "") + '. Недостатки по мнению клиента: ' + feedback.get('feedbackInfo').get("feedbackTextCons", "")), bool(feedback.get('feedbackInfo').get('photos')))
+            answer = generate_feedback_text_wb(feedback.get('feedbackInfo').get('userName'), feedback.get("valuation"), ("Текст: " + feedback.get('feedbackInfo').get("feedbackText", "") + '. Достоинства по мнению клиента: ' + feedback.get('feedbackInfo').get("feedbackTextPros", "") + '. Недостатки по мнению клиента: ' + feedback.get('feedbackInfo').get("feedbackTextCons", "")), bool(feedback.get('feedbackInfo').get('photos')))
             print(answer)
             answer_to_feedback(feedback_id, company, answer, feedback)
 
@@ -224,12 +228,32 @@ def answer_to_feedbacks_myk():
 
         for feedback in feedback_pool_unanswered:
             feedback_id = feedback.get('id')
-            answer = generate_feedback_text(feedback.get('feedbackInfo').get('userName'), feedback.get("valuation"), ("Текст: " + feedback.get('feedbackInfo').get("feedbackText", "") + '. Достоинства по мнению клиента: ' + feedback.get('feedbackInfo').get("feedbackTextPros", "") + '. Недостатки по мнению клиента: ' + feedback.get('feedbackInfo').get("feedbackTextCons", "")), bool(feedback.get('feedbackInfo').get('photos')))
+            answer = generate_feedback_text_wb(feedback.get('feedbackInfo').get('userName'), feedback.get("valuation"), ("Текст: " + feedback.get('feedbackInfo').get("feedbackText", "") + '. Достоинства по мнению клиента: ' + feedback.get('feedbackInfo').get("feedbackTextPros", "") + '. Недостатки по мнению клиента: ' + feedback.get('feedbackInfo').get("feedbackTextCons", "")), bool(feedback.get('feedbackInfo').get('photos')))
             print(answer)
             answer_to_feedback(feedback_id, company, answer, feedback)
 
 
+def answer_to_feedbacks_myk_ozon():
+    # Пример использования функции
+    headers = {
+        'Cookie': os.getenv('OZON_COOKIE'),
+        # Замените на ваш реальный cookie
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 YaBrowser/24.7.0.0 Safari/537.36',
+        "Accept-Language": "ru,en;q=0.9",
+        "X-O3-Company-Id": "1043385"
+    }
+
+    feedback_pool = process_url(headers)
+    for feedback in feedback_pool:
+        uuid = feedback[0]
+
+        feedback_text = generate_feedback_text_ozon(*feedback[1:])
+        result = respond_to_review(uuid, feedback_text)
+        print(result)
+
 
 if __name__ == '__main__':
     # answer_to_feedbacks_all()
+    answer_to_feedbacks_myk_ozon()
     answer_to_feedbacks_myk()
