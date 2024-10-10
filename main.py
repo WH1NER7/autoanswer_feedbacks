@@ -255,5 +255,6 @@ def answer_to_feedbacks_myk_ozon():
 
 if __name__ == '__main__':
     # answer_to_feedbacks_all()
-    answer_to_feedbacks_myk_ozon()
     answer_to_feedbacks_myk()
+    answer_to_feedbacks_myk_ozon()
+
