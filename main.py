@@ -4,7 +4,6 @@ import requests
 import json
 import random
 import logging
-import pymorphy3
 from openai import OpenAI
 
 from chat_gpt_generation_ozon import generate_feedback_text_ozon
