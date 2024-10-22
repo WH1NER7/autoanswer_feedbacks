@@ -7,7 +7,7 @@ import logging
 from openai import OpenAI
 
 from chat_gpt_generation_ozon import generate_feedback_text_ozon
-from ozon_feedbacks import process_url
+from ozon_feedbacks import get_reviews
 from response_to_feedback import respond_to_review
 
 
@@ -243,7 +243,7 @@ def answer_to_feedbacks_myk_ozon():
         "X-O3-Company-Id": "1043385"
     }
 
-    feedback_pool = process_url(headers)
+    feedback_pool = get_reviews(headers)
     for feedback in feedback_pool:
         uuid = feedback[0]
 
@@ -254,7 +254,14 @@ def answer_to_feedbacks_myk_ozon():
 
 if __name__ == '__main__':
     # answer_to_feedbacks_all()
-    answer_to_feedbacks_myk_ozon()
-    answer_to_feedbacks_myk()
+    try:
+        answer_to_feedbacks_myk_ozon()
+    except:
+        pass
+
+    try:
+        answer_to_feedbacks_myk()
+    except:
+        pass
 
 

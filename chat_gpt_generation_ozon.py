@@ -67,3 +67,5 @@ def generate_feedback_text_ozon(user_name, prod_val, feedback_text, has_photo):
         ]
     )
     return response.choices[0].message.content
+
+# print(generate_feedback_text_ozon("татьяна", 5, "", False))
