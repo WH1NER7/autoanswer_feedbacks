@@ -68,7 +68,7 @@ def generate_feedback_text_wb(user_name, prod_val, feedback_text, has_photo):
                     "    - недокомплект товара, обычно его воруют другие покупатели"
                     "    - выцветание ткани"
                     "то предложите покупателю связаться для решения проблемы. "
-                    "Укажите следующие контакты (передавай полностью, как указано): "
+                    "Укажите следующие контакты (передавай полностью, как указано, обязательно пиши t e l e g r a m раздельными буквами): "
                     "- Wildberries (Профиль -> Покупки -> Связаться с продавцом) "
                     "- t е l е g r а m: @missyourkiss_bot -> Служба заботы. "
 
@@ -142,8 +142,7 @@ def answer_to_feedback(feedback_id, company, feedback_text, feedback):
 
 
 def get_wildberries_empty_feedbacks(cookie):
-    url = "https://seller-services.wildberries.ru/ns/fa-seller-api/reviews-ext-back-end/api/v1/feedbacks?isAnswered=true&limit=100&offset=0&searchText=&sortOrder=dateDesc&valuations=1&valuations=2&valuations=3&valuations=4&valuations=5"
-
+    url = "https://seller-services.wildberries.ru/ns/fa-seller-api/reviews-ext-seller-portal/api/v1/feedbacks?isAnswered=true&limit=100&offset=0&searchText=&sortOrder=dateDesc&valuations=1&valuations=2&valuations=3&valuations=4&valuations=5"
     headers = {
         'Cookie': cookie  # Укажите передаваемый cookie в заголовке
     }
@@ -151,7 +150,7 @@ def get_wildberries_empty_feedbacks(cookie):
     try:
         # Выполняем GET-запрос
         response = requests.get(url, headers=headers)
-
+        # print(response.content)
         # Проверка на успешность запроса
         if response.status_code != 200:
             print(f"Ошибка: не удалось получить данные. Статус код: {response.status_code}")
@@ -254,10 +253,10 @@ def answer_to_feedbacks_myk_ozon():
 
 if __name__ == '__main__':
     # answer_to_feedbacks_all()
-    try:
-        answer_to_feedbacks_myk_ozon()
-    except:
-        pass
+    # try:
+    #     answer_to_feedbacks_myk_ozon()
+    # except:
+    #     pass
 
     try:
         answer_to_feedbacks_myk()
