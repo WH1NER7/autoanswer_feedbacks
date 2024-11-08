@@ -253,10 +253,10 @@ def answer_to_feedbacks_myk_ozon():
 
 if __name__ == '__main__':
     # answer_to_feedbacks_all()
-    # try:
-    #     answer_to_feedbacks_myk_ozon()
-    # except:
-    #     pass
+    try:
+        answer_to_feedbacks_myk_ozon()
+    except:
+        pass
 
     try:
         answer_to_feedbacks_myk()
