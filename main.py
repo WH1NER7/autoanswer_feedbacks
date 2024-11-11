@@ -188,8 +188,7 @@ def get_wildberries_empty_feedbacks(cookie):
 
 
 def get_wildberries_unanswered_feedbacks(cookie):
-    url = "https://seller-services.wildberries.ru/ns/fa-seller-api/reviews-ext-back-end/api/v1/feedbacks?isAnswered=false&limit=100&offset=0&searchText=&sortOrder=dateDesc&valuations=1&valuations=2&valuations=3&valuations=4&valuations=5"
-
+    url = "https://seller-services.wildberries.ru/ns/fa-seller-api/reviews-ext-seller-portal/api/v1/feedbacks?isAnswered=false&limit=100&offset=0&searchText=&sortOrder=dateDesc&valuations=1&valuations=2&valuations=3&valuations=4&valuations=5"
     headers = {
         'Cookie': cookie  # Укажите передаваемый cookie в заголовке
     }
