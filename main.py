@@ -272,16 +272,16 @@ def answer_to_feedbacks_klik_pult_ozon():
 
 if __name__ == '__main__':
     # answer_to_feedbacks_all()
-    # print(generate_feedback_text_wb("Алена", 3, "Достоинства: В целом понравились. | Недостатки: Цвет не тот. | Комментарий: Почему-то пришли с розовыми резинками", False))
-    # try:
-    #     answer_to_feedbacks_myk_ozon()
-    # except Exception as e:
-    #     print(e)
-    #
-    # try:
-    #     answer_to_feedbacks_myk()
-    # except Exception as e:
-    #     print(e)
+    print(generate_feedback_text_wb("Алена", 3, "Достоинства: В целом понравились. | Недостатки: Цвет не тот. | Комментарий: Почему-то пришли с розовыми резинками", False))
+    try:
+        answer_to_feedbacks_myk_ozon()
+    except Exception as e:
+        print(e)
+
+    try:
+        answer_to_feedbacks_myk()
+    except Exception as e:
+        print(e)
 
     try:
         answer_to_feedbacks_klik_pult_ozon()
