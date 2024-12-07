@@ -7,6 +7,7 @@ import logging
 from openai import OpenAI
 
 from chat_gpt_generation_ozon import generate_feedback_text_ozon
+from klik_pult.answer_feedbacks_for_one_time import process_all_reviews
 from ozon_feedbacks import get_reviews
 from response_to_feedback import respond_to_review
 
@@ -228,7 +229,7 @@ def get_wildberries_unanswered_feedbacks(cookie):
 def answer_to_feedbacks_myk():
     for company in ["MissYourKiss"]:
         feedback_pool = get_wildberries_empty_feedbacks(os.getenv('MYK_COOKIE'))
-
+        print(feedback_pool)
         for feedback in feedback_pool:
             feedback_id = feedback.get('id')
             answer = generate_feedback_text_wb(feedback.get('feedbackInfo').get('userName'), feedback.get("valuation"), ("Текст: " + feedback.get('feedbackInfo').get("feedbackText", "") + '. Достоинства по мнению клиента: ' + feedback.get('feedbackInfo').get("feedbackTextPros", "") + '. Недостатки по мнению клиента: ' + feedback.get('feedbackInfo').get("feedbackTextCons", "")), bool(feedback.get('feedbackInfo').get('photos')))
@@ -264,17 +265,26 @@ def answer_to_feedbacks_myk_ozon():
         print(result)
 
 
+def answer_to_feedbacks_klik_pult_ozon():
+    # Пример использования функции
+    process_all_reviews()
+
+
 if __name__ == '__main__':
     # answer_to_feedbacks_all()
     # print(generate_feedback_text_wb("Алена", 3, "Достоинства: В целом понравились. | Недостатки: Цвет не тот. | Комментарий: Почему-то пришли с розовыми резинками", False))
-    try:
-        answer_to_feedbacks_myk_ozon()
-    except:
-        pass
+    # try:
+    #     answer_to_feedbacks_myk_ozon()
+    # except Exception as e:
+    #     print(e)
+    #
+    # try:
+    #     answer_to_feedbacks_myk()
+    # except Exception as e:
+    #     print(e)
 
     try:
-        answer_to_feedbacks_myk()
-    except:
-        pass
-
+        answer_to_feedbacks_klik_pult_ozon()
+    except Exception as e:
+        print(e)
 
