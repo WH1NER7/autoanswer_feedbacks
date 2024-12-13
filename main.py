@@ -5,11 +5,16 @@ import json
 import random
 import logging
 from openai import OpenAI
+from datetime import datetime, timedelta
 
 from chat_gpt_generation_ozon import generate_feedback_text_ozon
 from klik_pult.answer_feedbacks_for_one_time import process_all_reviews
 from ozon_feedbacks import get_reviews
 from response_to_feedback import respond_to_review
+
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def log_feedback_response(response_text, feedback):
@@ -36,7 +41,7 @@ def get_token_evn(company):
         print(e)
         return ''
 
-#
+
 def generate_feedback_text_wb(user_name, prod_val, feedback_text, has_photo):
     client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
@@ -118,26 +123,9 @@ def generate_feedback_text_wb(user_name, prod_val, feedback_text, has_photo):
     return response.choices[0].message.content
 
 
-def get_unanswered_feedbacks(company):
-    url = "https://feedbacks-api.wildberries.ru/api/v1/feedbacks?isAnswered=false&take=1000&skip=0"
-
-    token = get_token_evn(company)
-    headers = {
-        "Authorization": token
-    }
-
-    try:
-        response = requests.get(url=url, headers=headers)
-        print(response.json())
-        return response.json().get('data').get('feedbacks')
-    except Exception as e:
-        print(e)
-        return []
-
-
-def answer_to_feedback(feedback_id, company, feedback_text, feedback):
+def answer_to_feedback(feedback_id, company, feedback_text):
     logging.info(f"Answering to feedback: {feedback_id} (Company: {company})")
-    url = "https://feedbacks-api.wb.ru/api/v1/feedbacks"
+    url = "https://feedbacks-api.wildberries.ru/api/v1/feedbacks/answer"
     token = get_token_evn(company)
 
     headers = {
@@ -149,107 +137,84 @@ def answer_to_feedback(feedback_id, company, feedback_text, feedback):
     }
 
     response = requests.patch(url=url, json=body, headers=headers)
-    response_text = response.json()
-
-    logging.info(f"Response for feedback {feedback_id}: {response_text}")
-    log_feedback_response(feedback_text, feedback)
-    print(feedback_text, response_text)
+    print(response.status_code)
 
 
-def get_wildberries_empty_feedbacks(cookie):
-    url = "https://seller-services.wildberries.ru/ns/fa-seller-api/reviews-ext-seller-portal/api/v1/feedbacks?isAnswered=true&limit=100&offset=0&searchText=&sortOrder=dateDesc&valuations=1&valuations=2&valuations=3&valuations=4&valuations=5"
+def get_combined_unanswered_feedbacks(API_KEY):
+    # Вычисляем дату два дня назад в формате Unix
+    two_days_ago_unix = int((datetime.utcnow() - timedelta(days=2)).timestamp())
+
+    base_url = "https://feedbacks-api.wildberries.ru/api/v1/feedbacks"
+    params_list = [
+        {'isAnswered': 'true', 'take': 5000, 'skip': 0, 'dateFrom': two_days_ago_unix},
+        {'isAnswered': 'false', 'take': 5000, 'skip': 0, 'dateFrom': two_days_ago_unix}
+    ]
+
     headers = {
-        'Cookie': cookie  # Укажите передаваемый cookie в заголовке
+        "Authorization": API_KEY
     }
 
-    try:
-        # Выполняем GET-запрос
-        response = requests.get(url, headers=headers)
-        # print(response.content)
-        # Проверка на успешность запроса
+    combined_feedbacks = []
+
+    for params in params_list:
+        response = requests.get(base_url, params=params, headers=headers)
+
         if response.status_code != 200:
-            print(f"Ошибка: не удалось получить данные. Статус код: {response.status_code}")
-            return None
+            print(f"Ошибка при запросе с параметрами {params}: {response.status_code}")
+            continue  # Переходим к следующему запросу
 
-        # Преобразуем ответ в формат JSON
-        data = response.json()
+        try:
+            response_data = response.json()
+        except ValueError:
+            print(f"Невозможно декодировать JSON для параметров {params}")
+            continue
 
-        # Проверка на наличие данных
-        if data["data"]["feedbacks"]:
-            feedbacks = data["data"]["feedbacks"]
+        # Извлекаем список отзывов
+        feedbacks = response_data.get("data", {}).get("feedbacks", [])
 
-            # Фильтруем отзывы, у которых поле "answer" равно null
-            unanswered_feedbacks = [feedback for feedback in feedbacks if feedback['answer'] is None]
+        # Фильтруем отзывы, у которых answer == null
+        unanswered_feedbacks = [f for f in feedbacks if f.get("answer") is None]
 
-            return unanswered_feedbacks
-        else:
-            print("Ошибка: данные о отзывах отсутствуют в ответе.")
-            return None
+        combined_feedbacks.extend(unanswered_feedbacks)
 
-    except requests.exceptions.RequestException as e:
-        print(f"Ошибка запроса: {e}")
-        return None
+    return combined_feedbacks
 
 
-def get_wildberries_unanswered_feedbacks(cookie):
-    url = "https://seller-services.wildberries.ru/ns/fa-seller-api/reviews-ext-seller-portal/api/v1/feedbacks?isAnswered=false&limit=100&offset=0&searchText=&sortOrder=dateDesc&valuations=1&valuations=2&valuations=3&valuations=4&valuations=5"
-    headers = {
-        'Cookie': cookie  # Укажите передаваемый cookie в заголовке
-    }
+def process_and_answer_feedbacks():
+    feedbacks = get_combined_unanswered_feedbacks(os.getenv('MissYourKiss_TOKEN'))
+    logger.info(f"Всего неотвеченных отзывов для обработки: {len(feedbacks)}")
 
-    try:
-        # Выполняем GET-запрос
-        response = requests.get(url, headers=headers)
+    for feedback in feedbacks:
+        feedback_id = feedback.get('id')
+        user_name = feedback.get('userName', 'Пользователь')
+        product_valuation = feedback.get('productValuation', 'N/A')
+        text = feedback.get('text', '').strip()
+        pros = feedback.get('pros', '').strip()
+        cons = feedback.get('cons', '').strip()
+        photo_links = feedback.get('photoLinks', [])
 
-        # Проверка на успешность запроса
-        if response.status_code != 200:
-            print(f"Ошибка: не удалось получить данные. Статус код: {response.status_code}")
-            return None
+        # Формируем текст отзыва
+        feedback_text = f"Текст: {text}. Достоинства по мнению клиента: {pros}. Недостатки по мнению клиента: {cons}"
 
-        # Преобразуем ответ в формат JSON
-        data = response.json()
+        # Генерируем ответ
+        answer = generate_feedback_text_wb(
+            user_name=user_name,
+            prod_val=product_valuation,
+            feedback_text=feedback_text,
+            has_photo=bool(photo_links)
+        )
 
-        # Проверка на наличие данных
-        if data["data"]["feedbacks"]:
-            feedbacks = data["data"]["feedbacks"]
-
-            # Фильтруем отзывы, у которых поле "answer" равно null
-            # unanswered_feedbacks = [feedback for feedback in feedbacks if feedback['answer'] is None]
-
-            return feedbacks
-        else:
-            print("Ошибка: данные о отзывах отсутствуют в ответе.")
-            return None
-
-    except requests.exceptions.RequestException as e:
-        print(f"Ошибка запроса: {e}")
-        return None
-
-
-def answer_to_feedbacks_myk():
-    for company in ["MissYourKiss"]:
-        feedback_pool = get_wildberries_empty_feedbacks(os.getenv('MYK_COOKIE'))
-        print(feedback_pool)
-        for feedback in feedback_pool:
-            feedback_id = feedback.get('id')
-            answer = generate_feedback_text_wb(feedback.get('feedbackInfo').get('userName'), feedback.get("valuation"), ("Текст: " + feedback.get('feedbackInfo').get("feedbackText", "") + '. Достоинства по мнению клиента: ' + feedback.get('feedbackInfo').get("feedbackTextPros", "") + '. Недостатки по мнению клиента: ' + feedback.get('feedbackInfo').get("feedbackTextCons", "")), bool(feedback.get('feedbackInfo').get('photos')))
-            print(answer)
-            answer_to_feedback(feedback_id, company, answer, feedback)
-
-        feedback_pool_unanswered = get_wildberries_unanswered_feedbacks(os.getenv('MYK_COOKIE'))
-
-        for feedback in feedback_pool_unanswered:
-            feedback_id = feedback.get('id')
-            answer = generate_feedback_text_wb(feedback.get('feedbackInfo').get('userName'), feedback.get("valuation"), ("Текст: " + feedback.get('feedbackInfo').get("feedbackText", "") + '. Достоинства по мнению клиента: ' + feedback.get('feedbackInfo').get("feedbackTextPros", "") + '. Недостатки по мнению клиента: ' + feedback.get('feedbackInfo').get("feedbackTextCons", "")), bool(feedback.get('feedbackInfo').get('photos')))
-            print(answer)
-            answer_to_feedback(feedback_id, company, answer, feedback)
+        # Отправляем ответ
+        try:
+            answer_to_feedback(feedback_id, 'MissYourKiss', answer)
+        except Exception as e:
+            logger.error(f"Ошибка при отправке ответа для отзыва ID: {feedback_id}. Ошибка: {e}")
 
 
 def answer_to_feedbacks_myk_ozon():
     # Пример использования функции
     headers = {
         'Cookie': os.getenv('OZON_COOKIE'),
-        # Замените на ваш реальный cookie
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 YaBrowser/24.7.0.0 Safari/537.36',
         "Accept-Language": "ru,en;q=0.9",
@@ -271,15 +236,13 @@ def answer_to_feedbacks_klik_pult_ozon():
 
 
 if __name__ == '__main__':
-    # answer_to_feedbacks_all()
-    print(generate_feedback_text_wb("Алена", 3, "Достоинства: В целом понравились. | Недостатки: Цвет не тот. | Комментарий: Почему-то пришли с розовыми резинками", False))
     try:
         answer_to_feedbacks_myk_ozon()
     except Exception as e:
         print(e)
 
     try:
-        answer_to_feedbacks_myk()
+        process_and_answer_feedbacks()
     except Exception as e:
         print(e)
 
