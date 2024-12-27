@@ -11,7 +11,7 @@ from chat_gpt_generation_ozon import generate_feedback_text_ozon
 from klik_pult.answer_feedbacks_for_one_time import process_all_reviews
 from ozon_feedbacks import get_reviews
 from response_to_feedback import respond_to_review
-
+from test_chat_ozon_answer import answer_forgotten_users
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -451,18 +451,22 @@ def answer_to_feedbacks_klik_pult_ozon():
 
 
 if __name__ == '__main__':
-    # try:
-    #     answer_to_feedbacks_myk_ozon()
-    # except Exception as e:
-    #     print(e)
-    #
-    # try:
-    #     process_and_answer_feedbacks()
-    # except Exception as e:
-    #     print(e)
+    try:
+        answer_to_feedbacks_myk_ozon()
+    except Exception as e:
+        print(e)
+
+    try:
+        process_and_answer_feedbacks()
+    except Exception as e:
+        print(e)
 
     try:
         answer_to_feedbacks_klik_pult_ozon()
     except Exception as e:
         print(e)
 
+    try:
+        answer_forgotten_users()
+    except Exception as e:
+        print(e)
