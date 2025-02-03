@@ -3,7 +3,7 @@ import os
 from openai import OpenAI
 
 
-def generate_feedback_text_ozon_klik(user_name, prod_val, feedback_text, has_photo):
+def generate_feedback_text_ozon_klik(user_name, prod_val, feedback_text, has_photo, has_video):
     client = OpenAI(api_key=os.getenv('OPENAI_API_KEY_KLIK'))
 
     # Пример запроса
@@ -88,11 +88,11 @@ def generate_feedback_text_ozon_klik(user_name, prod_val, feedback_text, has_pho
             },
     {
                 "role": "user",
-                "content": f"Клиента зовут {user_name}. Оценка {prod_val}. Есть ли фото?: {has_photo}. {feedback_text}"
+                "content": f"Клиента зовут {user_name}. Оценка {prod_val}. Есть ли фото?: {bool(has_photo)}. Есть ли видео?: {bool(has_video)}. {feedback_text}"
             }
         ]
     )
     # print(response.choices[0].message)
     return response.choices[0].message.content
 
-# print(generate_feedback_text_ozon_klik("Зарет Г.", 5, "Достоинства: Пользователь не оставил | Недостатки: пользователь не оставил | Комментарий: пользователь не оставил", False))
+# print(generate_feedback_text_ozon_klik("Зарет Г.", 5, "Достоинства: Пользователь не оставил | Недостатки: пользователь не оставил | Комментарий: пользователь не оставил", False, True))

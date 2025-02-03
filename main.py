@@ -8,7 +8,7 @@ from openai import OpenAI
 from datetime import datetime, timedelta
 
 from chat_gpt_generation_ozon import generate_feedback_text_ozon
-from klik_pult.answer_feedbacks_for_one_time import process_all_reviews
+from klik_ozon_api_answer import process_reviews
 from ozon_feedbacks import get_reviews
 from response_to_feedback import respond_to_review
 from test_chat_ozon_answer import answer_forgotten_users
@@ -172,7 +172,7 @@ def get_combined_unanswered_feedbacks(API_KEY):
 
         # Фильтруем отзывы, у которых answer == null
         unanswered_feedbacks = [f for f in feedbacks if f.get("answer") is None]
-
+        print(unanswered_feedbacks)
         combined_feedbacks.extend(unanswered_feedbacks)
 
     return combined_feedbacks
@@ -268,7 +268,7 @@ def answer_to_feedbacks_myk_ozon():
 
 def answer_to_feedbacks_klik_pult_ozon():
     # Пример использования функции
-    process_all_reviews()
+    process_reviews()
 
 
 if __name__ == '__main__':
