@@ -1,5 +1,3 @@
-import os
-
 import requests
 import logging
 from datetime import datetime
@@ -119,7 +117,7 @@ def process_reviews():
             logger.error(f"Error processing review {review_id}: {str(e)}")
 
 
-if __name__ == "__main__":
-    logger.info("Starting feedback processing")
-    process_reviews()
-    logger.info("Processing completed")
+# if __name__ == "__main__":
+#     logger.info("Starting feedback processing")
+#     process_reviews()
+#     logger.info("Processing completed")
