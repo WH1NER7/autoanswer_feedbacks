@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 # Общие настройки
 HEADERS = {
     "Content-Type": "application/json",
-    "Api-Key": "d41469eb-1bb5-433c-a707-ebe43af0ee32",
+    "Api-Key": os.getenv('OZON_KLIK_KEY"),
     "Client-Id": "419470"
 }
 BASE_URL = "https://api-seller.ozon.ru/v1/review"
