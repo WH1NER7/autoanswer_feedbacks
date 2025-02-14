@@ -1,3 +1,5 @@
+import os
+
 import requests
 import logging
 from datetime import datetime
@@ -19,7 +21,7 @@ logger = logging.getLogger(__name__)
 # Общие настройки
 HEADERS = {
     "Content-Type": "application/json",
-    "Api-Key": "d41469eb-1bb5-433c-a707-ebe43af0ee32",
+    "Api-Key": os.getenv('KLIK_OZON_API_FEEDBACKS'),
     "Client-Id": "419470"
 }
 BASE_URL = "https://api-seller.ozon.ru/v1/review"
@@ -117,7 +119,7 @@ def process_reviews():
             logger.error(f"Error processing review {review_id}: {str(e)}")
 
 
-# if __name__ == "__main__":
-#     logger.info("Starting feedback processing")
-#     process_reviews()
-#     logger.info("Processing completed")
+if __name__ == "__main__":
+    logger.info("Starting feedback processing")
+    process_reviews()
+    logger.info("Processing completed")
