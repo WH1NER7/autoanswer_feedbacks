@@ -1,3 +1,5 @@
+import os
+
 import requests
 import logging
 from datetime import datetime
@@ -19,7 +21,7 @@ logger = logging.getLogger(__name__)
 # Общие настройки
 HEADERS = {
     "Content-Type": "application/json",
-    "Api-Key": os.getenv('KLIK_OZON_API_FEEDBACKS'),
+    "Api-Key": os.getenv("KLIK_OZON_API_FEEDBACKS"),
     "Client-Id": "419470"
 }
 BASE_URL = "https://api-seller.ozon.ru/v1/review"
