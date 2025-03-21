@@ -6,33 +6,30 @@ from datetime import datetime
 from typing import Dict, List, Optional
 
 from klik_pult.chat_gpt_generation_ozon_klik import generate_feedback_text_ozon_klik
+from myk.deepseek_generation import generate_feedback_text_ozon_myk
 
 # Настройка логирования
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('feedback_processing.log'),
+        logging.FileHandler('../feedback_processing.log'),
         logging.StreamHandler()
     ]
 )
 logger = logging.getLogger(__name__)
 
 # Общие настройки
-HEADERS = {
-    "Content-Type": "application/json",
-    "Api-Key": os.getenv("KLIK_OZON_API_FEEDBACKS"),
-    "Client-Id": "419470"
-}
+
 BASE_URL = "https://api-seller.ozon.ru/v1/review"
 
 
-def get_unprocessed_reviews() -> Optional[List[Dict]]:
+def get_unprocessed_reviews(headers) -> Optional[List[Dict]]:
     """Получение непрочитанных отзывов"""
     try:
         response = requests.post(
             f"{BASE_URL}/list",
-            headers=HEADERS,
+            headers=headers,
             json={
                   "limit": 100,
                   "sort_dir": "DESC",
@@ -45,7 +42,7 @@ def get_unprocessed_reviews() -> Optional[List[Dict]]:
         filtered_reviews = [
             review for review in reviews
             if review.get('status') == 'UNPROCESSED'
-               and datetime.fromisoformat(review['published_at']).year >= 2025  # >= вместо <=
+               and datetime.fromisoformat(review['published_at']).year >= 2025
         ]
 
         return filtered_reviews
@@ -55,7 +52,7 @@ def get_unprocessed_reviews() -> Optional[List[Dict]]:
         return None
 
 
-def post_comment(review_id: str, text: str) -> bool:
+def post_comment(headers, review_id: str, text: str) -> bool:
     """Публикация комментария к отзыву"""
     try:
         payload = {
@@ -66,7 +63,7 @@ def post_comment(review_id: str, text: str) -> bool:
 
         response = requests.post(
             f"{BASE_URL}/comment/create",
-            headers=HEADERS,
+            headers=headers,
             json=payload
         )
 
@@ -82,9 +79,9 @@ def post_comment(review_id: str, text: str) -> bool:
         return False
 
 
-def process_reviews():
+def process_reviews(headers, company_name):
     """Основная функция обработки отзывов"""
-    reviews = get_unprocessed_reviews()
+    reviews = get_unprocessed_reviews(headers)
 
     if not reviews:
         logger.info("No unprocessed reviews found")
@@ -98,17 +95,27 @@ def process_reviews():
             videos = review['videos_amount'] > 0
             text = review.get('text', '')
 
-            # Генерируем текст ответа
-            response_text = generate_feedback_text_ozon_klik(
-                user_name='',
-                prod_val=rating,
-                feedback_text=text,
-                has_photo=photos,
-                has_video=videos
-            )
-
+            if company_name=="klik_pult":
+                # Генерируем текст ответа
+                response_text = generate_feedback_text_ozon_klik(
+                    user_name='',
+                    prod_val=rating,
+                    feedback_text=text,
+                    has_photo=photos,
+                    has_video=videos
+                )
+            elif company_name=="myk":
+                # Генерируем текст ответа
+                response_text = generate_feedback_text_ozon_myk(
+                    prod_val=rating,
+                    feedback_text=text,
+                    has_photo=photos,
+                    has_video=videos
+                )
+            else:
+                break
             # Отправляем комментарий
-            success = post_comment(review_id, response_text)
+            success = post_comment(headers, review_id, response_text)
 
             if not success:
                 logger.warning(f"Failed to process review {review_id}")

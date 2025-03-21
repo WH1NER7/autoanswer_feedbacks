@@ -2,13 +2,12 @@ import datetime
 import os
 import requests
 import json
-import random
 import logging
 from openai import OpenAI
 from datetime import datetime, timedelta
 
 from chat_gpt_generation_ozon import generate_feedback_text_ozon
-from klik_ozon_api_answer import process_reviews
+from klik_pult.klik_ozon_api_answer import process_reviews
 from ozon_feedbacks import get_reviews
 from response_to_feedback import respond_to_review
 from test_chat_ozon_answer import answer_forgotten_users
@@ -143,6 +142,8 @@ def generate_feedback_text_wb(user_name, prod_val, feedback_text, has_photo):
         ]
     )
     return response.choices[0].message.content
+
+
 def answer_to_feedback(feedback_id, company, feedback_text):
     logging.info(f"Answering to feedback: {feedback_id} (Company: {company})")
     url = "https://feedbacks-api.wildberries.ru/api/v1/feedbacks/answer"
@@ -269,35 +270,50 @@ def process_and_answer_feedbacks():
             logger.error(f"Ошибка при отправке ответа для отзыва ID: {feedback_id}. Ошибка: {e}")
 
 
-def answer_to_feedbacks_myk_ozon():
-    # Пример использования функции
-    headers = {
-        'Cookie': os.getenv('OZON_COOKIE'),
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 YaBrowser/24.7.0.0 Safari/537.36',
-        "Accept-Language": "ru,en;q=0.9",
-        "X-O3-Company-Id": "1043385"
-    }
-
-    feedback_pool = get_reviews(headers)
-    for feedback in feedback_pool:
-        uuid = feedback[0]
-
-        feedback_text = generate_feedback_text_ozon(*feedback[1:])
-        result = respond_to_review(uuid, feedback_text)
-        print(result)
+# def answer_to_feedbacks_myk_ozon():
+#     # Пример использования функции
+#     headers = {
+#         'Cookie': os.getenv('OZON_COOKIE'),
+#         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+#         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 YaBrowser/24.7.0.0 Safari/537.36',
+#         "Accept-Language": "ru,en;q=0.9",
+#         "X-O3-Company-Id": "1043385"
+#     }
+#
+#     feedback_pool = get_reviews(headers)
+#     for feedback in feedback_pool:
+#         uuid = feedback[0]
+#
+#         feedback_text = generate_feedback_text_ozon(*feedback[1:])
+#         result = respond_to_review(uuid, feedback_text)
+#         print(result)
 
 
 def answer_to_feedbacks_klik_pult_ozon():
+    HEADERS = {
+        "Content-Type": "application/json",
+        "Api-Key": os.getenv("KLIK_OZON_API_FEEDBACKS"),
+        "Client-Id": "419470"
+    }
     # Пример использования функции
-    process_reviews()
+    process_reviews(HEADERS, "klik_pult")
+
+
+def answer_to_feedbacks_myk_ozon():
+    HEADERS = {
+        "Content-Type": "application/json",
+        "Api-Key": os.getenv("OZON_API_KEY_MYK"),
+        "Client-Id": "1043385"
+    }
+    # Пример использования функции
+    process_reviews(HEADERS, "myk")
 
 
 if __name__ == '__main__':
-    try:
-        answer_to_feedbacks_myk_ozon()
-    except Exception as e:
-        print(e)
+    # try:
+    #     answer_to_feedbacks_myk_ozon()
+    # except Exception as e:
+    #     print(e)
 
     try:
         process_and_answer_feedbacks()
@@ -306,6 +322,11 @@ if __name__ == '__main__':
 
     try:
         answer_to_feedbacks_klik_pult_ozon()
+    except Exception as e:
+        print(e)
+
+    try:
+        answer_to_feedbacks_myk_ozon()
     except Exception as e:
         print(e)
 
