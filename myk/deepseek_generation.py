@@ -5,7 +5,6 @@ from openai import OpenAI
 
 def generate_feedback_text_ozon_myk(prod_val, feedback_text, has_photo, has_video):
     client = OpenAI(
-        # api_key='sk-22f1d63e4185439087d77e733f15bb41',
         api_key=os.getenv('MYK_API_DEEPSEEK'),
         base_url="https://api.deepseek.com/beta",
     )
