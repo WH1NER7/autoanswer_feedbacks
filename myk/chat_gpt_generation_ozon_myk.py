@@ -88,7 +88,7 @@ def generate_feedback_text_ozon_klik(user_name, prod_val, feedback_text, has_pho
             },
     {
                 "role": "user",
-                "content": f"Клиента зовут {user_name}. Оценка {prod_val}. Есть ли фото?: {bool(has_photo)}. Есть ли видео?: {bool(has_video)}. {feedback_text}"
+                "content": f"Клиента зовут {user_name} | Оценка {prod_val} | Есть ли фото?: {bool(has_photo)} | Есть ли видео?: {bool(has_video)}| {feedback_text}"
             }
         ]
     )
